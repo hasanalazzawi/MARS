@@ -1,0 +1,60 @@
+.data
+case1:      .asciiz "Case 1: a0=5, a1=9\n"
+case2:      .asciiz "Case 2: a0=12, a1=-3\n"
+lblA_t:     .asciiz "A) slt+bne  -> TAKEN\n"
+lblA_nt:    .asciiz "A) slt+bne  -> NOT TAKEN\n"
+lblB_t:     .asciiz "B) sub+bltz -> TAKEN\n"
+lblB_nt:    .asciiz "B) sub+bltz -> NOT TAKEN\n"
+
+.text
+.globl main
+
+test_blt_A:
+    slt  $at, $a0, $a1
+    bne  $at, $zero, A_taken
+    nop
+A_not_taken:
+    li   $v0,4
+    la   $a0,lblA_nt
+    syscall
+    jr   $ra
+A_taken:
+    li   $v0,4
+    la   $a0,lblA_t
+    syscall
+    jr   $ra
+
+test_blt_B:
+    sub  $at, $a0, $a1
+    bltz $at, B_taken
+    nop
+B_not_taken:
+    li   $v0,4
+    la   $a0,lblB_nt
+    syscall
+    jr   $ra
+B_taken:
+    li   $v0,4
+    la   $a0,lblB_t
+    syscall
+    jr   $ra
+
+main:
+    li $v0,4
+    la $a0,case1
+    syscall
+    li $a0,5
+    li $a1,9
+    jal test_blt_A
+    jal test_blt_B
+
+    li $v0,4
+    la $a0,case2
+    syscall
+    li $a0,12
+    li $a1,-3
+    jal test_blt_A
+    jal test_blt_B
+
+    li $v0,10
+    syscall
