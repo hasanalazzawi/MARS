@@ -1,0 +1,63 @@
+.data
+pre:      .asciiz "Source:  "
+post:     .asciiz "Squared: "
+comma:    .asciiz ", "
+nl:       .asciiz "\n"
+
+src_arr:  .word 1, 2, 3, 4
+dst_arr:  .space 16
+
+.text
+.globl main
+
+print_four_words:
+    li  $t2,0
+pfw_loop:
+    lw  $t3,0($a0)
+    li  $v0,1
+    move $a0,$t3
+    syscall
+    addiu $t2,$t2,1
+    beq $t2,4,pfw_done
+    nop
+    li  $v0,4
+    la  $a0,comma
+    syscall
+    addiu $a0,$a0,4
+    j   pfw_loop
+    nop
+pfw_done:
+    li  $v0,4
+    la  $a0,nl
+    syscall
+    jr $ra
+
+main:
+    li   $v0,4
+    la   $a0,pre
+    syscall
+    la   $a0,src_arr
+    jal  print_four_words
+
+    la   $t0, src_arr
+    la   $t1, dst_arr
+    li   $t2,4
+sq_loop:
+    lw   $t3,0($t0)
+    mult $t3,$t3
+    mflo $t3
+    sw   $t3,0($t1)
+    addiu $t0,$t0,4
+    addiu $t1,$t1,4
+    addiu $t2,$t2,-1
+    bgtz $t2,sq_loop
+    nop
+
+    li   $v0,4
+    la   $a0,post
+    syscall
+    la   $a0,dst_arr
+    jal  print_four_words
+
+    li   $v0,10
+    syscall
