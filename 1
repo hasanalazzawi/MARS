@@ -1,0 +1,43 @@
+.data
+msg_afterA:   .asciiz "After A) addu:  $a1 = "
+msg_afterB:   .asciiz "\nAfter B) ori:   $a1 = "
+msg_nl:       .asciiz "\n"
+
+.text
+.globl main
+
+move_impl_addu:
+    addu $a1, $a0, $zero
+    jr   $ra
+
+move_impl_ori:
+    ori  $a1, $a0, 0
+    jr   $ra
+
+main:
+    li   $a0, 0x1234ABCD
+    jal  move_impl_addu
+    li   $v0, 4
+    la   $a0, msg_afterA
+    syscall
+    li   $v0, 34
+    move $a0, $a1
+    syscall
+    li   $v0, 4
+    la   $a0, msg_nl
+    syscall
+
+    li   $a0, 0xDEADBEEF
+    jal  move_impl_ori
+    li   $v0, 4
+    la   $a0, msg_afterB
+    syscall
+    li   $v0, 34
+    move $a0, $a1
+    syscall
+    li   $v0, 4
+    la   $a0, msg_nl
+    syscall
+
+    li   $v0, 10
+    syscall
