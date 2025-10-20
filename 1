@@ -1,0 +1,32 @@
+.text
+.globl main
+
+# NOP #1 (canonical)
+nop_sll:
+    sll  $zero, $zero, 0
+    jr   $ra
+
+# NOP #2
+nop_addu:
+    addu $zero, $zero, $zero
+    jr   $ra
+
+# NOP #3
+nop_ori:
+    ori  $zero, $zero, 0
+    jr   $ra
+
+# (optional extra) NOP #4
+nop_slt:
+    slt  $zero, $zero, $zero
+    jr   $ra
+
+main:
+    # call each once (no architectural state changes)
+    jal  nop_sll
+    jal  nop_addu
+    jal  nop_ori
+    jal  nop_slt
+
+    li   $v0, 10
+    syscall
