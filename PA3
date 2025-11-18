@@ -1,0 +1,66 @@
+#include <stdio.h>
+
+int main(void) {
+    int power_log[] = {65, 340, 82, 305, 315, 190, 77, 420};  // Power log contains your dataset of power readings.
+    int len = sizeof(power_log)/sizeof(power_log[0]);         // Number of readings in the log.
+    int total = 0;     // Sum of "high" readings encountered when scanning the power logs.
+    int count = 0;     // Number of "high" readings encountered when scanning the power logs.
+    int avg = 0;       // Mean avg. of "high" readings encountered when scanning the power logs.
+    int lowcount = 0;  // Number of "low" readings encountered when scanning the power logs.
+
+    asm volatile (
+        /* r4 = base of array, r5 = length, r6 = index (even only),
+           r7 = pointer into RAM, r3 = threshold (300) */
+
+        "mov   r4, %[arr]           \n\t"  // r4 = &power_log[0]
+        "mov   r5, %[len]           \n\t"  // r5 = len
+        "movs  r6, #0               \n\t"  // index i = 0
+        "ldr   r7, =0x20001000      \n\t"  // dest pointer for low readings
+        "ldr   r3, =300             \n\t"  // high/low threshold
+
+    "loop_start:                    \n\t"
+        "cmp   r6, r5               \n\t"  // i >= len ?
+        "bge   loop_end             \n\t"
+
+        // address of power_log[i] (4 bytes per int)
+        "mov   r8, r6               \n\t"
+        "lsl   r8, r8, #2           \n\t"  // r8 = i * 4
+        "add   r9, r4, r8           \n\t"
+        "ldr   r10, [r9]            \n\t"  // r10 = power_log[i]
+
+        // classify as high (>=300) or low
+        "cmp   r10, r3              \n\t"
+        "blt   is_low               \n\t"  // if value < 300 -> low
+
+        // ------- high reading -------
+        "add   %[total], %[total], r10 \n\t"  // total += value
+        "add   %[count], %[count], #1 \n\t"   // count++
+
+        "b     loop_continue        \n\t"
+
+    "is_low:                        \n\t"
+        // ------- low reading -------
+        "str   r10, [r7], #4        \n\t"  // store to RAM, r7 += 4
+        "add   %[lowcount], %[lowcount], #1 \n\t"
+
+    "loop_continue:                 \n\t"
+        "add   r6, r6, #2           \n\t"  // i += 2 (skip odd indices)
+        "b     loop_start           \n\t"
+
+    "loop_end:                      \n\t"
+        : [total]    "+r" (total),
+          [count]    "+r" (count),
+          [lowcount] "+r" (lowcount)
+        : [arr] "r" (power_log),
+          [len] "r" (len)
+        : "r3","r4","r5","r6","r7","r8","r9","r10","memory"
+    );
+
+    if (count > 0)
+        avg = total / count;
+
+    printf("Average of high-power readings = %d mW\n", avg);
+    printf("%d low-power readings dumped into RAM at 0x20001000:\n", lowcount);
+
+    return 0;
+}
